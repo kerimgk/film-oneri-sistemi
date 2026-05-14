@@ -65,19 +65,11 @@ def load_movies():
 movies_df = load_movies()
 
 def load_trained_model():
-    try:
-        # ID'ler 1-tabanlı olduğu için 0. indeksi de kapsayacak şekilde 944 ve 1683 diyoruz.
-        model = NCFModel(num_users=944, num_items=1683) 
-        
-        # Dosya yan yana olduğu için sadece ismini yazman yeterli
-        model.load_state_dict(torch.load("ncf_model.pth", map_location=torch.device('cpu')))
-        
-        model.eval()
-        return model
-    except Exception as e:
-        # Hatanın ne olduğunu loglarda görmek için print ekleyelim
-        print(f"Model yükleme hatası: {e}")
-        return None
+    # Hata yakalamayı (try-except) geçici olarak devre dışı bırakıyoruz
+    model = NCFModel(944, 1683)
+    model.load_state_dict(torch.load("ncf_model.pth", map_location=torch.device('cpu')))
+    model.eval()
+    return model
 
 trained_model = load_trained_model()
 
