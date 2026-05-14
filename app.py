@@ -42,17 +42,20 @@ class WatchQueue:
 class NCFModel(nn.Module):
     def __init__(self, num_users, num_items):
         super(NCFModel, self).__init__()
-        self.user_emb = nn.Embedding(num_users, 50) # Slayt 7: 50 boyut
-        self.item_emb = nn.Embedding(num_items, 50)
-        self.fc = nn.Sequential(
+        # İsimleri state_dict ile eşleştirdik: emb -> embed
+        self.user_embed = nn.Embedding(num_users, 50) 
+        self.item_embed = nn.Embedding(num_items, 50)
+        # fc -> fc_layers olarak güncellendi
+        self.fc_layers = nn.Sequential(
             nn.Linear(100, 64), nn.ReLU(),
             nn.Linear(64, 32), nn.ReLU(),
             nn.Linear(32, 1)
         )
+        
     def forward(self, u, i):
-        x = torch.cat([self.user_emb(u), self.item_emb(i)], dim=-1)
-        return self.fc(x).squeeze()
-
+        # forward içindeki isimleri de güncellemeyi unutma
+        x = torch.cat([self.user_embed(u), self.item_embed(i)], dim=-1)
+        return self.fc_layers(x).squeeze()
 # ==========================================
 # 3. BÖLÜM: VERİ VE MODEL YÜKLEME
 # ==========================================
