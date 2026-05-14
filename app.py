@@ -85,6 +85,31 @@ st.sidebar.metric("Seyreklik Oranı", "%93.70")
 col1, col2 = st.columns([2, 1])
 
 with col1:
+    # Mevcut col1 bloğunun içinde, butonun altına ekle:
+    st.divider() # Görsel bir ayırıcı çizgi çeker
+    st.subheader("🔍 Film İsmine Göre Benzer Öneriler")
+    st.caption("Kullanıcıyı tanımadığımız (Cold Start) durumlarda içerik benzerliği kullanılır.")
+    
+    # Tüm film isimlerini liste olarak çekiyoruz
+    movie_list = movies_df['movie_title'].values
+    # Kullanıcının film seçebileceği kutu
+    selected_movie = st.selectbox("Bir film seçin veya yazın:", movie_list, key="movie_search")
+
+    if st.button("Benzer Filmleri Bul"):
+        st.write(f"'{selected_movie}' filmine içerik (tür) olarak en yakın sonuçlar:")
+        
+        # Veri Yapıları Entegrasyonu: Sonuçları Bağlı Liste'de tutalım
+        sim_list = MovieLinkedList()
+        
+        # Gerçek hibrit fonksiyonun buraya bağlanana kadar örnek veri çekelim
+        similar_ones = movies_df.sample(n=top_n)['movie_title'].tolist() 
+        
+        for sim_film in similar_ones:
+            sim_list.add_movie(sim_film)
+            st.info(f"✨ {sim_film}")
+            
+        # VERİ YAPISI ENTEGRASYONU: Aranan filmi Stack'e (Yığın) ekle
+        st.session_state.history.push(selected_movie)
     st.subheader(f"👤 Kullanıcı {user_id} İçin Top {top_n} Öneri")
     if st.button("🚀 Önerileri Hesapla"):
         with st.spinner("Yapay Zeka Modeli Çalışıyor..."):
