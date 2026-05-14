@@ -79,7 +79,7 @@ trained_model = load_trained_model()
 # ==========================================
 st.set_page_config(page_title="Hibrit Öneri Sistemi", layout="wide")
 st.title("🎬 Hibrit Film Öneri Sistemi")
-st.caption("Ankara Üniversitesi Software Engineering - Kerim")
+
 
 # Sidebar Metrikleri
 st.sidebar.header("📊 Model Metrikleri")
@@ -131,7 +131,7 @@ with col1:
         dot_product = np.dot(genre_matrix, target_vector)
         norms = np.linalg.norm(genre_matrix, axis=1) * np.linalg.norm(target_vector)
         
-        # 0'a bölme hatasını engellemek için küçük bir epsilon ekleyebilirsin
+        # 0'a bölme hatasını engellemek için küçük bir epsilon ekle
         similarity = dot_product / (norms + 1e-9)
 
         # 3. Kendisi hariç en yüksek benzerliğe sahip 5 filmi getir
