@@ -51,7 +51,7 @@ class WatchQueue:
 # ==========================================
 @st.cache_data # Veriyi her seferinde indirmesin diye önbelleğe alıyoruz
 def load_data():
-    # Sadece filmlerin adlarını çekiyoruz (Şimdilik arayüz için yeterli)
+    # Sadece filmlerin adlarını çekiyoruz 
     movie_url = "https://files.grouplens.org/datasets/movielens/ml-100k/u.item"
     genre_cols = ["unknown", "Action", "Adventure", "Animation", "Children's", "Comedy", 
                   "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror", 
@@ -68,7 +68,6 @@ movies_df = load_data()
 st.set_page_config(page_title="Hibrit Film Öneri Sistemi", page_icon="🎬", layout="wide")
 
 st.title("🎬 Hibrit Film Öneri Sistemi")
-st.markdown("Ankara Üniversitesi - Yazılım Mühendisliği | Geliştirici: Kerim")
 st.divider()
 
 # Sidebar (Yan Menü) Ayarları
