@@ -65,12 +65,23 @@ def load_movies():
 movies_df = load_movies()
 
 def load_trained_model():
-    # Hata yakalamayı (try-except) geçici olarak devre dışı bırakıyoruz
-    model = NCFModel(944, 1683)
-    model.load_state_dict(torch.load("ncf_model.pth", map_location=torch.device('cpu')))
-    model.eval()
-    return model
-
+    model = NCFModel(944, 1683) # Sayıları Colab'dakiyle aynı yap!
+    
+    # State dict'i yükle
+    state_dict = torch.load("ncf_model.pth", map_location=torch.device('cpu'))
+    
+    # EĞER Colab'da "torch.save(model, ...)" dediysen (tüm modeli kaydettiysen)
+    # state_dict bir model nesnesi olabilir. Onu düzeltmek için:
+    if not isinstance(state_dict, dict):
+        state_dict = state_dict.state_dict()
+        
+    try:
+        model.load_state_dict(state_dict)
+        model.eval()
+        return model
+    except RuntimeError as e:
+        st.error(f"Boyut Uyuşmazlığı: {e}")
+        return None
 trained_model = load_trained_model()
 
 # ==========================================
