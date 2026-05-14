@@ -115,12 +115,33 @@ with col1:
     st.divider()
 
     # 2. Öneri: Content-Based (Arama)
+# 2. Öneri: Content-Based (Arama)
     sel_movie = st.selectbox("Bir film seçin:", movies_df['movie_title'].values)
     if st.button("🔍 Benzer Filmleri Bul"):
         st.session_state.history.push(sel_movie)
-        # Basit İçerik Benzerliği (Tür bazlı)
-        recs = movies_df.sample(5)['movie_title'].tolist() # Örnek çıktı
+        
+        # --- GERÇEK HESAPLAMA BAŞLIĞI ---
+        # 1. Seçilen filmin index'ini ve tür vektörünü al (g0-g18 arası sütunlar)
+        movie_idx = movies_df[movies_df['movie_title'] == sel_movie].index[0]
+        genre_matrix = movies_df.iloc[:, 5:24].values # Türlerin olduğu matris
+        target_vector = genre_matrix[movie_idx]
+
+        # 2. Kosinüs Benzerliği Hesapla (Vektörel Çarpım / Normlar)
+        # Türler 0/1 olduğu için dot product ortak tür sayısını verir
+        dot_product = np.dot(genre_matrix, target_vector)
+        norms = np.linalg.norm(genre_matrix, axis=1) * np.linalg.norm(target_vector)
+        
+        # 0'a bölme hatasını engellemek için küçük bir epsilon ekleyebilirsin
+        similarity = dot_product / (norms + 1e-9)
+
+        # 3. Kendisi hariç en yüksek benzerliğe sahip 5 filmi getir
+        similarity[movie_idx] = -1 # Kendisini önermesin
+        top_indices = similarity.argsort()[-5:][::-1]
+        recs = movies_df.iloc[top_indices]['movie_title'].tolist()
+        # --- GERÇEK HESAPLAMA SONU ---
+
         st.subheader(f"✨ '{sel_movie}' Benzerleri")
+        st.caption("Bu sonuçlar matematiksel Kosinüs Benzerliği kullanılarak hesaplanmıştır.")
         for r in recs: st.info(f"🎞️ {r}")
 
 with col2:
