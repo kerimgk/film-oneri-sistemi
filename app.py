@@ -173,6 +173,11 @@ col1, col2 = st.columns([7, 3], gap="large")
 with col1:
     # 1. KISIM: BENZERLERİNİ KEŞFET (ÜSTTE)
     st.markdown("### 🔍 Benzerlerini Keşfet")
+    with st.expander("💡 Bu bölüm nasıl çalışıyor? (Content-Based Filtering)"):
+        st.markdown("""
+        Bu algoritma, kullanıcı geçmişinden tamamen bağımsız çalışır. 
+        Seçilen filmin özelliklerini (türlerini) bir matematiksel vektör kabul eder ve diğer tüm filmlerle arasındaki **Kosinüs Benzerliğini (Cosine Similarity)** hesaplar. Vektörel olarak birbirine en yakın (açısı en dar) olan 5 içeriği önerir.
+        """)
     sel_movie = st.selectbox("Sevdiğiniz bir filmi seçin:", movies_df['movie_title'].values)
     
     if st.button("Benzer Filmleri Bul"):
@@ -204,6 +209,11 @@ with col1:
 
     # 2. KISIM: ID GİRİŞİ (ALTTA)
     st.markdown("### 🤖 Sizin İçin Seçtiklerimiz")
+    with st.expander("🧠 Yapay Zeka (NCF) Nasıl Tahmin Yapıyor?"):
+        st.markdown("""
+        **Neural Collaborative Filtering (NCF)** kullanan bu derin öğrenme modeli, seçilen ID'ye sahip kullanıcının geçmişteki izleme alışkanlıklarını veri setinden çeker. 
+        Benzer zevklere sahip diğer insanların (işbirlikçi) hareketleriyle harmanlayarak, **kullanıcının henüz izlemediği ama izlerse çok seveceği** en iyi 5 filmi tahmin eder. Gördüğünüz liste geçmiş değil, bir gelecek tahminidir.
+        """)
     u_id = st.number_input("Kullanıcı ID (1-943):", 1, 943, 11)
     
     if st.button("🚀 Benim İçin Önerileri Hesapla", type="primary"):
