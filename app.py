@@ -185,10 +185,46 @@ def kuyruga_ekle(film_adi):
 col1, col2 = st.columns([7, 3], gap="large")
 
 with col1:
+    # ==========================================
+    # 1. ÜST KISIM: BENZERLERİNİ KEŞFET (Content-Based)
+    # ==========================================
+    st.markdown("### 🔍 Benzerlerini Keşfet")
+    sel_movie = st.selectbox("Sevdiğiniz bir filmi seçin:", movies_df['movie_title'].values)
+    
+    if st.button("Benzer Filmleri Bul"):
+        movie_idx = movies_df[movies_df['movie_title'] == sel_movie].index[0]
+        genre_matrix = movies_df.iloc[:, 5:24].values
+        target_vector = genre_matrix[movie_idx]
+
+        dot_product = np.dot(genre_matrix, target_vector)
+        norms = np.linalg.norm(genre_matrix, axis=1) * np.linalg.norm(target_vector)
+        similarity = dot_product / (norms + 1e-9)
+
+        similarity[movie_idx] = -1 
+        top_indices = similarity.argsort()[-5:][::-1]
+        st.session_state.cb_recs = movies_df.iloc[top_indices]['movie_title'].tolist()
+
+    # State'te Benzer Film önerisi varsa ekrana çiz
+    if st.session_state.cb_recs:
+        st.caption(f"✨ '{sel_movie}' sevenler bunları da izledi:")
+        for r in st.session_state.cb_recs:
+            with st.container(border=True):
+                c_info, c_btn = st.columns([3, 1])
+                with c_info:
+                    st.write(f"🎞️ **{r}**")
+                    st.caption("Benzerlik Skoru Yüksek")
+                with c_btn:
+                    st.write("")
+                    st.button("➕ Listeme Ekle", key=f"btn_cb_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
+
+    st.divider() # İki bölüm arasına şık bir ayırıcı çizgi
+
+    # ==========================================
+    # 2. ALT KISIM: ID GİRİŞİ VE NCF ÖNERİLERİ
+    # ==========================================
     st.subheader("Hoş Geldiniz! ID'nizi Girin:")
     u_id = st.number_input("Kullanıcı ID (1-943)", 1, 943, 11, label_visibility="collapsed")
     
-    # --- 1. ÖNERİ SİSTEMİ: NCF ---
     if st.button("🚀 Benim İçin Önerileri Hesapla", type="primary"):
         if trained_model:
             items = torch.arange(len(movies_df))
@@ -196,24 +232,53 @@ with col1:
             with torch.no_grad():
                 preds = trained_model(users, items).numpy()
             top_idx = preds.argsort()[-5:][::-1]
-            # Sonuçları state'e kaydediyoruz
             st.session_state.ncf_recs = movies_df.iloc[top_idx]['movie_title'].tolist()
         else:
             st.warning("Model dosyası yükleniyor veya bulunamadı.")
-# State'te NCF önerisi varsa ekrana çiz
+
+    # State'te NCF önerisi varsa ekrana çiz
     if st.session_state.ncf_recs:
         st.markdown("### 🤖 Sizin İçin Seçtiklerimiz (NCF)")
         for r in st.session_state.ncf_recs:
             with st.container(border=True): 
-                # Sütunları 2'ye düşürdük (Bilgi ve Buton)
                 c_info, c_btn = st.columns([3, 1]) 
                 with c_info:
-                    st.write(f"🎬 **{r}**") # Emoji ile şıklaştırdık
+                    st.write(f"🎬 **{r}**") 
                     st.caption("Eşleşme Oranı: %98 • HD")
                 with c_btn:
-                    st.write("") # Dikey hizalama için
+                    st.write("") 
                     st.button("➕ Listeme Ekle", key=f"btn_ncf_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
+    st.divider() # İki bölüm arasına şık bir ayırıcı çizgi
 
+    # ==========================================
+    # 2. ALT KISIM: ID GİRİŞİ VE NCF ÖNERİLERİ
+    # ==========================================
+    st.subheader("Hoş Geldiniz! ID'nizi Girin:")
+    u_id = st.number_input("Kullanıcı ID (1-943)", 1, 943, 11, label_visibility="collapsed")
+    
+    if st.button("🚀 Benim İçin Önerileri Hesapla", type="primary"):
+        if trained_model:
+            items = torch.arange(len(movies_df))
+            users = torch.full_like(items, u_id)
+            with torch.no_grad():
+                preds = trained_model(users, items).numpy()
+            top_idx = preds.argsort()[-5:][::-1]
+            st.session_state.ncf_recs = movies_df.iloc[top_idx]['movie_title'].tolist()
+        else:
+            st.warning("Model dosyası yükleniyor veya bulunamadı.")
+
+    # State'te NCF önerisi varsa ekrana çiz
+    if st.session_state.ncf_recs:
+        st.markdown("### 🤖 Sizin İçin Seçtiklerimiz (NCF)")
+        for r in st.session_state.ncf_recs:
+            with st.container(border=True): 
+                c_info, c_btn = st.columns([3, 1]) 
+                with c_info:
+                    st.write(f"🎬 **{r}**") 
+                    st.caption("Eşleşme Oranı: %98 • HD")
+                with c_btn:
+                    st.write("") 
+                    st.button("➕ Listeme Ekle", key=f"btn_ncf_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
     st.divider()
 
     # --- 2. ÖNERİ SİSTEMİ: İÇERİK TABANLI ---
