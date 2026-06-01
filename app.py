@@ -93,7 +93,6 @@ st.set_page_config(page_title="Hibrit Öneri Sistemi", layout="wide", page_icon=
 # --- ÖZEL CSS (Netflix Hissiyatı İçin) ---
 st.markdown("""
 <style>
-    /* Arayüzdeki container'lara hafif gölge ve yuvarlak köşe */
     [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
         background-color: rgba(255, 255, 255, 0.02);
         border-radius: 10px;
@@ -105,55 +104,60 @@ st.markdown("""
 
 st.markdown("<h1 class='kirmizi-baslik'>🍿 Hibrit Film Öneri Sistemi</h1>", unsafe_allow_html=True)
 
-# State Yönetimi (Sıfırlama Butonları İçin Eklentili)
+# --- STATE YÖNETİMİ ---
 if 'history' not in st.session_state: st.session_state.history = ActionStack()
 if 'queue' not in st.session_state: st.session_state.queue = WatchQueue()
 
-col1, col2 = st.columns([7, 3], gap="large") # Sol tarafı (filmleri) daha geniş tutuyoruz
+# YENİ: Filmlerin ekranda kalıcı olması için listeleri State'te tutuyoruz
+if 'ncf_recs' not in st.session_state: st.session_state.ncf_recs = []
+if 'cb_recs' not in st.session_state: st.session_state.cb_recs = []
+
+# YENİ: Callback Fonksiyonu (Listeye eklemek için)
+def kuyruga_ekle(film_adi):
+    st.session_state.queue.enqueue(film_adi)
+
+col1, col2 = st.columns([7, 3], gap="large")
 
 with col1:
     st.subheader("Hoş Geldiniz! ID'nizi Girin:")
     u_id = st.number_input("Kullanıcı ID (1-943)", 1, 943, 11, label_visibility="collapsed")
     
-    # 1. Öneri Butonu: Collaborative Filtering (NCF)
+    # --- 1. ÖNERİ SİSTEMİ: NCF ---
     if st.button("🚀 Benim İçin Önerileri Hesapla", type="primary"):
         if trained_model:
-            # Gerçek Tahmin Mantığı
             items = torch.arange(len(movies_df))
             users = torch.full_like(items, u_id)
             with torch.no_grad():
                 preds = trained_model(users, items).numpy()
             top_idx = preds.argsort()[-5:][::-1]
-            recs = movies_df.iloc[top_idx]['movie_title'].tolist()
-            
-            st.markdown("### 🤖 Sizin İçin Seçtiklerimiz (NCF)")
-            
-            # NETFLIX TARZI KART TASARIMI
-            for r in recs:
-                with st.container(border=True): # Filmleri kutu (kart) içine alıyoruz
-                    c_img, c_info, c_btn = st.columns([1, 4, 2])
-                    with c_img:
-                        # Gerçek afiş olmadığı için temsili şık bir ikon/görsel
-                        st.image("https://via.placeholder.com/100x150/141414/E50914?text=🎥", use_container_width=True)
-                    with c_info:
-                        st.write(f"**{r}**")
-                        st.caption("Eşleşme Oranı: %98 • HD")
-                    with c_btn:
-                        st.write("") # Boşluk
-                        if st.button("➕ Listeme Ekle", key=f"ncf_{r}", use_container_width=True):
-                            st.session_state.queue.enqueue(r)
-                            st.rerun()
+            # Sonuçları state'e kaydediyoruz
+            st.session_state.ncf_recs = movies_df.iloc[top_idx]['movie_title'].tolist()
         else:
             st.warning("Model dosyası yükleniyor veya bulunamadı.")
 
+    # State'te NCF önerisi varsa ekrana çiz
+    if st.session_state.ncf_recs:
+        st.markdown("### 🤖 Sizin İçin Seçtiklerimiz (NCF)")
+        for r in st.session_state.ncf_recs:
+            with st.container(border=True): 
+                c_img, c_info, c_btn = st.columns([1, 4, 2])
+                with c_img:
+                    st.image("https://via.placeholder.com/100x150/141414/E50914?text=🎥", use_container_width=True)
+                with c_info:
+                    st.write(f"**{r}**")
+                    st.caption("Eşleşme Oranı: %98 • HD")
+                with c_btn:
+                    st.write("") 
+                    # DÜZELTME: on_click ile butona basılınca doğrudan fonksiyonu tetikliyoruz
+                    st.button("➕ Listeme Ekle", key=f"btn_ncf_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
+
     st.divider()
 
-    # 2. Öneri: Content-Based (Arama)
+    # --- 2. ÖNERİ SİSTEMİ: İÇERİK TABANLI ---
     st.markdown("### 🔍 Benzerlerini Keşfet")
     sel_movie = st.selectbox("Sevdiğiniz bir filmi seçin:", movies_df['movie_title'].values)
     
     if st.button("Benzer Filmleri Bul"):
-        # Gerçek Hesaplama Mantığı
         movie_idx = movies_df[movies_df['movie_title'] == sel_movie].index[0]
         genre_matrix = movies_df.iloc[:, 5:24].values
         target_vector = genre_matrix[movie_idx]
@@ -162,14 +166,15 @@ with col1:
         norms = np.linalg.norm(genre_matrix, axis=1) * np.linalg.norm(target_vector)
         similarity = dot_product / (norms + 1e-9)
 
-        similarity[movie_idx] = -1
+        similarity[movie_idx] = -1 
         top_indices = similarity.argsort()[-5:][::-1]
-        recs = movies_df.iloc[top_indices]['movie_title'].tolist()
+        # Sonuçları state'e kaydediyoruz
+        st.session_state.cb_recs = movies_df.iloc[top_indices]['movie_title'].tolist()
 
+    # State'te Benzer Film önerisi varsa ekrana çiz
+    if st.session_state.cb_recs:
         st.caption(f"✨ '{sel_movie}' sevenler bunları da izledi:")
-        
-        # NETFLIX TARZI KART TASARIMI
-        for r in recs:
+        for r in st.session_state.cb_recs:
             with st.container(border=True):
                 c_img, c_info, c_btn = st.columns([1, 4, 2])
                 with c_img:
@@ -179,9 +184,7 @@ with col1:
                     st.caption("Benzerlik Skoru Yüksek")
                 with c_btn:
                     st.write("")
-                    if st.button("➕ Listeme Ekle", key=f"cb_{r}", use_container_width=True):
-                        st.session_state.queue.enqueue(r)
-                        st.rerun()
+                    st.button("➕ Listeme Ekle", key=f"btn_cb_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
 
 with col2:
     st.markdown("### 📂 Benim Listem")
@@ -193,7 +196,7 @@ with col2:
             for idx, q_movie in enumerate(queue_items):
                 st.markdown(f"`{idx+1}.` **{q_movie}**")
             
-            st.write("") # Boşluk
+            st.write("") 
             qc1, qc2 = st.columns(2)
             with qc1:
                 if st.button("▶️ Sıradakini İzle", type="primary", use_container_width=True):
@@ -202,7 +205,7 @@ with col2:
                     st.rerun()
             with qc2:
                 if st.button("🗑️ Sırayı Boşalt", use_container_width=True):
-                    st.session_state.queue.items = [] # Kuyruğu temizle
+                    st.session_state.queue.items = [] 
                     st.rerun()
         else:
             st.info("Listeniz şu an boş. Film ekleyin!")
@@ -216,12 +219,12 @@ with col2:
             
             st.write("")
             if st.button("🧹 Geçmişi Temizle", use_container_width=True):
-                st.session_state.history.items = [] # Geçmişi temizle
+                st.session_state.history.items = [] 
                 st.rerun()
         else:
             st.caption("Henüz hiçbir şey izlemediniz.")
 
-    # Sidebar Metrikleri (Sağ panele ya da sola alabilirsin, burada şık durur)
+    # Sidebar Metrikleri
     st.divider()
     st.markdown("##### 📊 Model Performansı")
     m1, m2 = st.columns(2)
