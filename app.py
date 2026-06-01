@@ -3,6 +3,28 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
+import requests
+
+@st.cache_data
+def get_movie_poster(movie_title):
+    # Filmin adındaki yılı temizleyelim (ör: "Toy Story (1995)" -> "Toy Story")
+    clean_title = movie_title.split("(")[0].strip()
+    
+    # TMDB API Anahtarı (Bunu ücretsiz alman gerekecek)
+    api_key = "BURAYA_API_ANAHTARI_GELECEK" 
+    url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={clean_title}"
+    
+    try:
+        response = requests.get(url).json()
+        if response.get('results'):
+            poster_path = response['results'][0].get('poster_path')
+            if poster_path:
+                return f"https://image.tmdb.org/t/p/w500{poster_path}"
+    except Exception as e:
+        pass
+    
+    # Eğer afiş bulunamazsa veya internet koparsa siyah şık bir boş kutu döndür
+    return "https://via.placeholder.com/200x300/141414/E50914?text=Gorsel+Yok"
 
 # ==========================================
 # 1. BÖLÜM: VERİ YAPILARI (Müfredat Uyumu)
