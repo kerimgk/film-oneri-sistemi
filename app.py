@@ -219,37 +219,7 @@ with col1:
 
     st.divider() # İki bölüm arasına şık bir ayırıcı çizgi
 
-    # ==========================================
-    # 2. ALT KISIM: ID GİRİŞİ VE NCF ÖNERİLERİ
-    # ==========================================
-    st.subheader("Hoş Geldiniz! ID'nizi Girin:")
-    u_id = st.number_input("Kullanıcı ID (1-943)", 1, 943, 11, label_visibility="collapsed")
     
-    if st.button("🚀 Benim İçin Önerileri Hesapla", type="primary"):
-        if trained_model:
-            items = torch.arange(len(movies_df))
-            users = torch.full_like(items, u_id)
-            with torch.no_grad():
-                preds = trained_model(users, items).numpy()
-            top_idx = preds.argsort()[-5:][::-1]
-            st.session_state.ncf_recs = movies_df.iloc[top_idx]['movie_title'].tolist()
-        else:
-            st.warning("Model dosyası yükleniyor veya bulunamadı.")
-
-    # State'te NCF önerisi varsa ekrana çiz
-    if st.session_state.ncf_recs:
-        st.markdown("### 🤖 Sizin İçin Seçtiklerimiz (NCF)")
-        for r in st.session_state.ncf_recs:
-            with st.container(border=True): 
-                c_info, c_btn = st.columns([3, 1]) 
-                with c_info:
-                    st.write(f"🎬 **{r}**") 
-                    st.caption("Eşleşme Oranı: %98 • HD")
-                with c_btn:
-                    st.write("") 
-                    st.button("➕ Listeme Ekle", key=f"btn_ncf_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
-    st.divider() # İki bölüm arasına şık bir ayırıcı çizgi
-
     # ==========================================
     # 2. ALT KISIM: ID GİRİŞİ VE NCF ÖNERİLERİ
     # ==========================================
