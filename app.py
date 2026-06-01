@@ -164,7 +164,7 @@ with col1:
             with st.container(border=True): 
                 c_img, c_info, c_btn = st.columns([1, 4, 2])
                 with c_img:
-                    st.image("https://via.placeholder.com/100x150/141414/E50914?text=🎥", use_container_width=True)
+                   st.image(get_movie_poster(r), use_container_width=True)
                 with c_info:
                     st.write(f"**{r}**")
                     st.caption("Eşleşme Oranı: %98 • HD")
