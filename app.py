@@ -125,23 +125,18 @@ img_base64 = get_base64_of_bin_file('arkaplan.jpg')
 st.markdown(
     f"""
     <style>
-    /* 1. Arka Plan Resmini Ayarlama */
     .stApp {{
         background-image: url("data:image/jpg;base64,{img_base64}");
         background-size: cover;
         background-position: center;
         background-attachment: fixed; 
     }}
-    
-    /* 2. Başlık Stili */
     .kirmizi-baslik {{ 
         color: #E50914; 
         font-weight: 900; 
         text-shadow: 2px 2px 8px rgba(0,0,0,0.9); 
         padding-bottom: 10px;
     }}
-    
-    /* 3. Kart Tasarımları: Yarı saydam siyah */
     [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {{
         background-color: rgba(15, 15, 15, 0.85) !important;
         border-radius: 12px;
@@ -149,15 +144,11 @@ st.markdown(
         border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(4px); 
     }}
-    
-    /* 4. Alt Başlıkların Renkleri */
     h3 {{
         color: #f5f5f5 !important;
         font-weight: 600;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
     }}
-    
-    /* 5. Metinlerin genel okunabilirliği için */
     p, span, div {{
         text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }}
@@ -168,26 +159,19 @@ st.markdown(
 
 st.markdown("<h1 class='kirmizi-baslik'>🍿 Hibrit Film Öneri Sistemi</h1>", unsafe_allow_html=True)
 
-# --- Kodun geri kalanı (State Yönetimi ve Sütunlar) buradan itibaren aynı şekilde devam edecek ---
-
 # --- STATE YÖNETİMİ ---
 if 'history' not in st.session_state: st.session_state.history = ActionStack()
 if 'queue' not in st.session_state: st.session_state.queue = WatchQueue()
-
-# YENİ: Filmlerin ekranda kalıcı olması için listeleri State'te tutuyoruz
 if 'ncf_recs' not in st.session_state: st.session_state.ncf_recs = []
 if 'cb_recs' not in st.session_state: st.session_state.cb_recs = []
 
-# YENİ: Callback Fonksiyonu (Listeye eklemek için)
 def kuyruga_ekle(film_adi):
     st.session_state.queue.enqueue(film_adi)
 
 col1, col2 = st.columns([7, 3], gap="large")
 
 with col1:
-    # ==========================================
-    # 1. ÜST KISIM: BENZERLERİNİ KEŞFET (Content-Based)
-    # ==========================================
+    # 1. KISIM: BENZERLERİNİ KEŞFET (ÜSTTE)
     st.markdown("### 🔍 Benzerlerini Keşfet")
     sel_movie = st.selectbox("Sevdiğiniz bir filmi seçin:", movies_df['movie_title'].values)
     
@@ -204,7 +188,6 @@ with col1:
         top_indices = similarity.argsort()[-5:][::-1]
         st.session_state.cb_recs = movies_df.iloc[top_indices]['movie_title'].tolist()
 
-    # State'te Benzer Film önerisi varsa ekrana çiz
     if st.session_state.cb_recs:
         st.caption(f"✨ '{sel_movie}' sevenler bunları da izledi:")
         for r in st.session_state.cb_recs:
@@ -217,14 +200,11 @@ with col1:
                     st.write("")
                     st.button("➕ Listeme Ekle", key=f"btn_cb_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
 
-    st.divider() # İki bölüm arasına şık bir ayırıcı çizgi
+    st.divider()
 
-    
-    # ==========================================
-    # 2. ALT KISIM: ID GİRİŞİ VE NCF ÖNERİLERİ
-    # ==========================================
-    st.subheader("Hoş Geldiniz! ID'nizi Girin:")
-    u_id = st.number_input("Kullanıcı ID (1-943)", 1, 943, 11, label_visibility="collapsed")
+    # 2. KISIM: ID GİRİŞİ (ALTTA)
+    st.markdown("### 🤖 Sizin İçin Seçtiklerimiz")
+    u_id = st.number_input("Kullanıcı ID (1-943):", 1, 943, 11)
     
     if st.button("🚀 Benim İçin Önerileri Hesapla", type="primary"):
         if trained_model:
@@ -237,9 +217,7 @@ with col1:
         else:
             st.warning("Model dosyası yükleniyor veya bulunamadı.")
 
-    # State'te NCF önerisi varsa ekrana çiz
     if st.session_state.ncf_recs:
-        st.markdown("### 🤖 Sizin İçin Seçtiklerimiz (NCF)")
         for r in st.session_state.ncf_recs:
             with st.container(border=True): 
                 c_info, c_btn = st.columns([3, 1]) 
@@ -249,38 +227,7 @@ with col1:
                 with c_btn:
                     st.write("") 
                     st.button("➕ Listeme Ekle", key=f"btn_ncf_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
-    st.divider()
 
-    # --- 2. ÖNERİ SİSTEMİ: İÇERİK TABANLI ---
-    st.markdown("### 🔍 Benzerlerini Keşfet")
-    sel_movie = st.selectbox("Sevdiğiniz bir filmi seçin:", movies_df['movie_title'].values)
-    
-    if st.button("Benzer Filmleri Bul"):
-        movie_idx = movies_df[movies_df['movie_title'] == sel_movie].index[0]
-        genre_matrix = movies_df.iloc[:, 5:24].values
-        target_vector = genre_matrix[movie_idx]
-
-        dot_product = np.dot(genre_matrix, target_vector)
-        norms = np.linalg.norm(genre_matrix, axis=1) * np.linalg.norm(target_vector)
-        similarity = dot_product / (norms + 1e-9)
-
-        similarity[movie_idx] = -1 
-        top_indices = similarity.argsort()[-5:][::-1]
-        # Sonuçları state'e kaydediyoruz
-        st.session_state.cb_recs = movies_df.iloc[top_indices]['movie_title'].tolist()
-# State'te Benzer Film önerisi varsa ekrana çiz
-    if st.session_state.cb_recs:
-        st.caption(f"✨ '{sel_movie}' sevenler bunları da izledi:")
-        for r in st.session_state.cb_recs:
-            with st.container(border=True):
-                # Sütunları 2'ye düşürdük
-                c_info, c_btn = st.columns([3, 1])
-                with c_info:
-                    st.write(f"🎞️ **{r}**")
-                    st.caption("Benzerlik Skoru Yüksek")
-                with c_btn:
-                    st.write("")
-                    st.button("➕ Listeme Ekle", key=f"btn_cb_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
 with col2:
     st.markdown("### 📂 Benim Listem")
     
