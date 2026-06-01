@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import requests
-
+import base64
 @st.cache_data
 def get_movie_poster(movie_title):
     # Filmin adındaki yılı temizleyelim (ör: "Toy Story (1995)" -> "Toy Story")
@@ -111,39 +111,64 @@ trained_model = load_trained_model()
 # 4. BÖLÜM: ARAYÜZ (UI) - NETFLIX TARZI
 # ==========================================
 st.set_page_config(page_title="Hibrit Öneri Sistemi", layout="wide", page_icon="🍿")
-# --- ÖZEL CSS (Netflix Hissiyatı ve Sinematik Arka Plan) ---
-st.markdown("""
-<style>
-    /* 1. Ana Arka Plan: Üstten hafif kırmızımsı bir ışık vuran koyu sinematik degrade */
-    .stApp {
-        background: radial-gradient(circle at 50% 0%, #2b0a0a 0%, #0a0a0a 60%, #000000 100%);
-        color: #e5e5e5;
-    }
+
+# --- ARKA PLAN RESMİ İÇİN FONKSİYON ---
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+# Yüklediğin resmi okutup değişkene alıyoruz
+img_base64 = get_base64_of_bin_file('arkaplan.jpg')
+
+# --- ÖZEL CSS (Resimli Arka Plan ve Yarı Saydam Kartlar) ---
+st.markdown(
+    f"""
+    <style>
+    /* 1. Arka Plan Resmini Ayarlama */
+    .stApp {{
+        background-image: url("data:image/jpg;base64,{img_base64}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed; 
+    }}
     
-    /* 2. Netflix Kırmızısı Başlık ve Gölgelendirme */
-    .kirmizi-baslik { 
+    /* 2. Başlık Stili */
+    .kirmizi-baslik {{ 
         color: #E50914; 
         font-weight: 900; 
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.8); 
+        text-shadow: 2px 2px 8px rgba(0,0,0,0.9); 
         padding-bottom: 10px;
-    }
+    }}
     
-    /* 3. Kart Tasarımları: Yarı saydam siyah, hafif beyaz kenarlıklı şık kutular */
-    [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
-        background-color: rgba(20, 20, 20, 0.8) !important;
+    /* 3. Kart Tasarımları: Yarı saydam siyah */
+    [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {{
+        background-color: rgba(15, 15, 15, 0.85) !important;
         border-radius: 12px;
         padding: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.6);
-    }
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(4px); 
+    }}
     
-    /* 4. Benim Listem ve Diğer Alt Başlıkların Renkleri */
-    h3 {
+    /* 4. Alt Başlıkların Renkleri */
+    h3 {{
         color: #f5f5f5 !important;
         font-weight: 600;
-    }
-</style>
-""", unsafe_allow_html=True)
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    }}
+    
+    /* 5. Metinlerin genel okunabilirliği için */
+    p, span, div {{
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown("<h1 class='kirmizi-baslik'>🍿 Hibrit Film Öneri Sistemi</h1>", unsafe_allow_html=True)
+
+# --- Kodun geri kalanı (State Yönetimi ve Sütunlar) buradan itibaren aynı şekilde devam edecek ---
 
 # --- STATE YÖNETİMİ ---
 if 'history' not in st.session_state: st.session_state.history = ActionStack()
