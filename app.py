@@ -156,21 +156,18 @@ with col1:
             st.session_state.ncf_recs = movies_df.iloc[top_idx]['movie_title'].tolist()
         else:
             st.warning("Model dosyası yükleniyor veya bulunamadı.")
-
-    # State'te NCF önerisi varsa ekrana çiz
+# State'te NCF önerisi varsa ekrana çiz
     if st.session_state.ncf_recs:
         st.markdown("### 🤖 Sizin İçin Seçtiklerimiz (NCF)")
         for r in st.session_state.ncf_recs:
             with st.container(border=True): 
-                c_img, c_info, c_btn = st.columns([1, 4, 2])
-                with c_img:
-                   st.image(get_movie_poster(r), use_container_width=True)
+                # Sütunları 2'ye düşürdük (Bilgi ve Buton)
+                c_info, c_btn = st.columns([3, 1]) 
                 with c_info:
-                    st.write(f"**{r}**")
+                    st.write(f"🎬 **{r}**") # Emoji ile şıklaştırdık
                     st.caption("Eşleşme Oranı: %98 • HD")
                 with c_btn:
-                    st.write("") 
-                    # DÜZELTME: on_click ile butona basılınca doğrudan fonksiyonu tetikliyoruz
+                    st.write("") # Dikey hizalama için
                     st.button("➕ Listeme Ekle", key=f"btn_ncf_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
 
     st.divider()
@@ -192,22 +189,19 @@ with col1:
         top_indices = similarity.argsort()[-5:][::-1]
         # Sonuçları state'e kaydediyoruz
         st.session_state.cb_recs = movies_df.iloc[top_indices]['movie_title'].tolist()
-
-    # State'te Benzer Film önerisi varsa ekrana çiz
+# State'te Benzer Film önerisi varsa ekrana çiz
     if st.session_state.cb_recs:
         st.caption(f"✨ '{sel_movie}' sevenler bunları da izledi:")
         for r in st.session_state.cb_recs:
             with st.container(border=True):
-                c_img, c_info, c_btn = st.columns([1, 4, 2])
-                with c_img:
-                    st.image("https://via.placeholder.com/100x150/222222/FFFFFF?text=🎞️", use_container_width=True)
+                # Sütunları 2'ye düşürdük
+                c_info, c_btn = st.columns([3, 1])
                 with c_info:
-                    st.write(f"**{r}**")
+                    st.write(f"🎞️ **{r}**")
                     st.caption("Benzerlik Skoru Yüksek")
                 with c_btn:
                     st.write("")
                     st.button("➕ Listeme Ekle", key=f"btn_cb_{r}", on_click=kuyruga_ekle, args=(r,), use_container_width=True)
-
 with col2:
     st.markdown("### 📂 Benim Listem")
     
